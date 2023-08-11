@@ -69,6 +69,8 @@ use App\Http\Controllers\API\Superadmin\ReportController;
 use App\Mail\TestMail;
 use App\Models\User;
 use App\Http\Controllers\V2API\Resources\WalletTopupController;
+use App\Http\Controllers\CustomController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -458,5 +460,7 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
 
         Route::post('/wallet-topup', [WalletTopupController::class, 'initiate']);
                 Route::post('/wallet-topup/credit', [WalletTopupController::class, 'creditWallet']);
-    });
+
+            });
+            Route::get('/generate-passport-keys', [CustomController::class, 'generatePassportKeys']);
 });
