@@ -460,6 +460,7 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
 
         Route::post('/wallet-topup', [WalletTopupController::class, 'initiate']);
                 Route::post('/wallet-topup/credit', [WalletTopupController::class, 'creditWallet']);
+                Route::get('/wallet-topup/{id}', [WalletTopupController::class, 'topUpHistory']);
 
             });
             Route::get('/generate-passport-keys', [CustomController::class, 'generatePassportKeys']);

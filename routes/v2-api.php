@@ -75,5 +75,6 @@ Route::group(['middleware' => []], function () {
 
                 Route::post('/wallet-topup', [WalletTopupController::class, 'initiate']);
                 Route::post('/wallet-topup/credit', [WalletTopupController::class, 'creditWallet']);
+                Route::get('/wallet-topup-h', [WalletTopupController::class, 'topUpHistory']);
         });
 });

@@ -37,76 +37,81 @@ class TransactionController extends Controller
     }
 
     public function dispute(Request $request)
-    {
-        $this->validate($request, [
-            'transaction_id' => 'string|required|min:10',
-            // 'status' => 'string|required',
-            'comment' => 'required|string'
+{
+    $this->validate($request, [
+        'transaction_id' => 'string|required|min:10',
+        'comment' => 'required|string'
+    ]);
+
+    try {
+        DB::beginTransaction();
+        $transactions = Transaction::where('transaction_id', $request->transaction_id)->get();
+
+        if (!$transactions) {
+            throw new Exception('No transaction found', 404);
+        }
+
+        if ($transactions[0]->dispute) {
+            throw new Exception("This transaction has been disputed or has been resolved.", 400);
+        }
+
+        foreach ($transactions as $transaction) {
+            $transaction->update([
+                'status' => 'disputed',
+                'is_disputed' => true,
+            ]);
+        }
+
+        $coe_id = $transactions[0]->coe_id;
+
+        $transaction_dispute = TransactionDispute::create([
+            'transaction_id' => $transactions[0]->transaction_id,
+            'reason_for_dispute' => $request->comment,
+            'coe_id' => $coe_id,
+            'status' => CHFConstants::$OPEN,
+            'coe_staff_id' => $transactions[0]->biller_id,
+            'disputed_by' => auth()->id(),
+            'patient_user_id' => $transactions[0]->user_id
         ]);
 
-        try {
-            DB::beginTransaction();
-            $transactions = Transaction::where('transaction_id', $request->transaction_id)->get();
+        $hospital_cmd = User::whereHas('roles', function ($query) {
+            return $query->where('role', CHFConstants::$CMD);
+        })->where(['status' => CHFConstants::$ACTIVE, 'coe_id' => $coe_id])->get('email')->toArray();
 
+        $secretariat_staff = User::whereHas('roles', function ($query) {
+            $query->where('role', CHFConstants::$CHF_ADMIN);
+        })->where(['status' => CHFConstants::$ACTIVE])->get('email')->toArray();
 
-            if (!$transactions) {
-                throw new Exception('No transaction found', 404);
-            }
+        $mailing_list = array_merge(
+            array_merge($hospital_cmd, $secretariat_staff),
+            [
+                'eokorie@emgeresources.com',
+                'yokubadejo@emgeresources.com',
+                $transactions[0]->biller->email,
+                // $transactions[0]->patient->user->email,
+            ]
+        );
 
-            if ($transactions[0]->dispute) {
-                throw new Exception("This transaction has been disputed or has been resolved.", 400);
-            }
+        // Get CAP Drugs
+        $response = Http::get(config('services.cap.host') . '/product');
 
-            /* SET THE STATUS OF ALL TRANSACTIONS TO THE STATUS */
-            foreach ($transactions as $transaction) {
-                $transaction->update([
-                    'status' => 'disputed',
-                    'is_disputed' => true,
-                ]);
-            }
+        DB::commit(); // Commit the database transaction before attempting email sending
 
-            $coe_id = $transactions[0]->coe_id;
+        // Attempt to send the email
+        \Mail::to($mailing_list)->send(new TransactionDisputeRaisedMail($transaction_dispute, $response->json()['data']));
 
-            $transaction_dispute = TransactionDispute::create([
-                'transaction_id' => $transactions[0]->transaction_id,
-                'reason_for_dispute' => $request->comment,
-                'coe_id' => $coe_id,
-                'status' => CHFConstants::$OPEN,
-                'coe_staff_id' => $transactions[0]->biller_id,
-                'disputed_by' => auth()->id(),
-                'patient_user_id' => $transactions[0]->user_id
-            ]);
-
-            $hospital_cmd = User::whereHas('roles', function ($query) {
-                return $query->where('role', CHFConstants::$CMD);
-            })->where(['status' => CHFConstants::$ACTIVE, 'coe_id' => $coe_id])->get('email')->toArray();
-
-            $secretariat_staff = User::whereHas('roles', function ($query) {
-                $query->where('role', CHFConstants::$CHF_ADMIN);
-            })->where(['status' => CHFConstants::$ACTIVE])->get('email')->toArray();
-
-            $mailing_list = array_merge(
-                array_merge($hospital_cmd, $secretariat_staff),
-                [
-                    'eokorie@emgeresources.com',
-                    'yokubadejo@emgeresources.com',
-                    $transactions[0]->biller->email,
-                    // $transactions[0]->patient->user->email,
-                ]
-            );
-
-            //Get CAP Drugs
-            $response = Http::get(config('services.cap.host') . '/product');
-            // event(new TransactionFlaggedEvent($transaction_dispute));
-            \Mail::to($mailing_list)->send(new TransactionDisputeRaisedMail($transaction_dispute, $response->json()['data']));
-
-            DB::commit();
-            return ResponseHelper::ajaxResponseBuilder(true, 'Transaction has been flagged.');
-        } catch (\Exception $ex) {
-            DB::rollBack();
-            throw $ex;
+        // If email sending fails, log the error
+        if (\Mail::failures()) {
+            \Log::error('Email sending failed for transaction dispute:', \Mail::failures());
         }
+
+        return ResponseHelper::ajaxResponseBuilder(true, 'Transaction has been flagged.');
+    } catch (\Exception $ex) {
+        DB::rollBack();
+        throw $ex;
     }
+}
+
 
     public function resolveDispute($transaction_id)
     {

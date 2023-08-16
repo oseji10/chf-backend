@@ -144,4 +144,17 @@ class WalletTopupController extends Controller
             throw $ex;
         }
     }
+
+
+
+    public function topUpHistory($id)
+    {
+
+        // $patient_wallet_topup_history = "Hi";
+
+        $patient_wallet_topup_history = WalletTopup::where('patient_user_id', $id)->get();
+
+
+        return ResponseHelper::ajaxResponseBuilder(true, '', $patient_wallet_topup_history);
+    }
 }
