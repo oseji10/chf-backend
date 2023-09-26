@@ -9,6 +9,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Traits\tUserVerification;
+use App\Models\Patient;
+use App\Models\WalletTopup;
+use App\Helpers\CHFConstants;
 
 class CHFAdminController extends Controller
 {
@@ -103,5 +106,26 @@ class CHFAdminController extends Controller
         }
     }
 
+    // public function chfPatients()
+    // {
+        
+    //     // $coe_id = auth()->user()->coe_id;
+    //     $patients = Patient::where(['social_worker_status' => CHFConstants::$APPROVED, 'primary_physician_status' => CHFConstants::$APPROVED])
+    //         ->with('user',  'coe', 'wallet', 'walletTopup')
+    //         ->get();
+
+    //     return ResponseHelper::ajaxResponseBuilder(true, "COE Patient", $patients);
+    // }
+
+    public function chfPatients()
+    {
+        
+        // $coe_id = auth()->user()->coe_id;
+        $patients = WalletTopup::
+            with('patient', 'coe', 'user', 'wallet')
+            ->get();
+
+        return ResponseHelper::ajaxResponseBuilder(true, "Patients Awaiting Topup", $patients);
+    }
     
 }

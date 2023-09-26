@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Traits\tUserVerification;
+use App\Models\Patient;
+use App\Helpers\CHFConstants;
 
 class CHFStaffController extends Controller
 {
@@ -97,6 +99,18 @@ class CHFStaffController extends Controller
         }
     }
 
+
+    public function chfPatients()
+    {
+        $patient = "Hi";
+        return $patient;
+        // $coe_id = auth()->user()->coe_id;
+        // $patients = Patient::where(['social_worker_status' => CHFConstants::$APPROVED, 'primary_physician_status' => CHFConstants::$APPROVED])
+            // ->with('user', 'primaryPhysician', 'ailment', 'state', 'stateOfResidence', 'familyHistories', 'mdtComments', 'coe', 'wallet')
+            // ->get();
+
+        return ResponseHelper::ajaxResponseBuilder(true, "COE Patient", $patients);
+    }
 
    
 }

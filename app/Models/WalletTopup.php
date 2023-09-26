@@ -46,4 +46,18 @@ class WalletTopup extends Model
     {
         return $this->belongsTo(User::class, 'credited_by', 'id');
     }
+
+    public function patient()
+    {
+        return $this->hasOne(Patient::class, 'user_id', 'patient_user_id');
+    }
+
+    public function coe(){
+        return $this->belongsTo(COE::class);
+    }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class, 'user_id', 'patient_user_id');
+    }
 }

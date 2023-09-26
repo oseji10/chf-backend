@@ -205,6 +205,8 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
         Route::post('/sadmin/chfstaffs', [CHFAdminController::class, 'store']);
         Route::put('/sadmin/chfstaffs/{user_id}', [CHFAdminController::class, 'update']);
         Route::delete('/sadmin/chfstaffs/{user_id}', [CHFAdminController::class, 'destroy']);
+        Route::get('/chfadmin/patients', [CHFAdminController::class, 'chfPatients']);
+        // Route::get('/sadmin/chfstaffs/patients', [CHFAdminController::class, 'chfPatients']);
 
         // COE HELP DESK STAFF CONTROLLER
         Route::get('/sadmin/coehelpdeskstaffs', [COEHelpDeskController::class, 'index']);
@@ -339,6 +341,7 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
         Route::post('/chfstaffs', [ResourceCHFStaffController::class, 'store']);
         Route::put('/chfstaffs/{user_id}', [ResourceCHFStaffController::class, 'update']);
         Route::delete('/chfstaffs/{user_id}', [ResourceCHFStaffController::class, 'destroy']);
+        Route::get('/chfstaffs/patients', [ResourceCHFStaffController::class, 'chfPatients']);
 
         // All patients registered to a COE as their primary COE
         Route::get('/coes/{coe_id}/transactions', [ResourceCOEController::class, 'transactions']);
@@ -465,3 +468,4 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
             });
             Route::get('/generate-passport-keys', [CustomController::class, 'generatePassportKeys']);
 });
+

@@ -146,4 +146,9 @@ class Patient extends Model
         return $this->hasOne(Wallet::class, 'user_id', 'user_id');
     }
 
+    public function walletTopup()
+    {
+        return $this->hasOne(WalletTopup::class, 'patient_user_id', 'user_id');
+    }
+
 }
