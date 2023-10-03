@@ -89,11 +89,11 @@ class AuthController extends Controller
                 'channel' => $email,
                 'hash' => $token,
             ]);
-            \Mail::to($email)->send(new EmailVerification([
-                'email' => $email,
-                'hash' => $token,
-            ]));
-            AWSHelper::sendSMS($phone, "Your verification code is " . $token);
+            // \Mail::to($email)->send(new EmailVerification([
+            //     'email' => $email,
+            //     'hash' => $token,
+            // ]));
+            // AWSHelper::sendSMS($phone, "Your verification code is " . $token);
             // $this->sendEmailToken($validated_data['email'], $validated_data['phone_number']);
 
             DB::commit();

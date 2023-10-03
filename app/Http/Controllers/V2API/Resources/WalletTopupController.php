@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-
+use App\Models\COEWalletTopup;
 class WalletTopupController extends Controller
 {
     //
@@ -157,4 +157,122 @@ class WalletTopupController extends Controller
 
         return ResponseHelper::ajaxResponseBuilder(true, '', $patient_wallet_topup_history);
     }
+
+
+
+    public function coeWalletTopupHistory(Request $request)
+    {
+
+        $coe_wallet = COEWalletTopup::where('id', $request->coe_id)->first();
+
+    }
+    public function coeWalletTopupInitiate(Request $request)
+    {
+        $this->validate($request, [
+            'amount_requested' => 'numeric|required|min:1',
+            'coe_id' => 'string|required',
+        ]);
+
+
+       
+       
+        $coe_wallet = COE::where('id', $request->coe_id)->first();
+
+        /* ONLY STAFF PATIENT'S PRIMARY COE SHOULD REQUEST FOR ADDITIONAL FUND */
+        if (auth()->user()->coe_id !== $coe_wallet->coe_id) {
+            // throw new BadRequestException("Only staff at patient's primary COE may request for additional funding");
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $topup_request = new COEWalletTopup();
+
+            $topup_request->requester_id = auth()->id();
+            $topup_request->requested_on = now(CHFConstants::$DEFAULT_TIMEZONE);
+            $topup_request->credited_by = auth()->id();
+            $topup_request->credited_on = now(CHFConstants::$DEFAULT_TIMEZONE);
+            // $topup_request->patient_user_id = $patient_user_id;
+            // $topup_request->amount_requested = $request->amount_requested;
+            $topup_request->amount_credited = $request->amount_credited;
+            $topup_request->coe_id = $coe_wallet->id;
+            $topup_request->previous_balance = $coe_wallet->fund_allocation;
+            $topup_request->save();
+
+            $coe_wallet->fund_allocation = $coe_wallet->fund_allocation + $request->amount_credited;
+      
+            $coe_wallet->save();
+
+            DB::commit();
+
+            return ResponseHelper::ajaxResponseBuilder(true, "Top up initiated.", $topup_request, 201);
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            throw $ex;
+        }
+        return $coe_wallet;
+    }
+
+
+
+
+
+    public function creditCOEWallet(Request $request)
+    {
+        $this->validate($request, [
+            'topup_request_id' => 'numeric|required',
+            'amount_credited' => 'numeric|required',
+        ]);
+
+  
+
+        $topup = WalletTopup::find($request->topup_request_id);
+
+        $amount_credited = $request->amount_credited;
+
+
+
+        try {
+     
+
+         
+
+            // $coe_wallet->balance = $coe_wallet->fund_allocation + $amount_credited;
+            // $coe_wallet->save();
+
+            $topup->amount_credited = $amount_credited;
+            $topup->credited_by = auth()->id();
+            $topup->credited_on = now(CHFConstants::$DEFAULT_TIMEZONE);
+            $topup->status = CHFConstants::$CREDITED;
+            $topup->save();
+
+
+            // $secretariatStaff = User::whereHas('roles', function ($query) {
+            //     $query->whereIn('role', ["chf admin",]);
+            // })->where('status', CHFConstants::$ACTIVE)->pluck('email')->toArray();
+
+            // $hospitalStakeholders = User::whereHas('roles', function ($query) {
+            //     return $query->whereIn('role', ["MDT", "CMD"]);
+            // })->where([
+            //     'coe_id' => $topup->user->patient->coe_id,
+            //     'status' => CHFConstants::$ACTIVE,
+            // ])->pluck('email')->toArray();
+
+            // $mailing_list = array_merge(
+            //     array_merge($secretariatStaff, $hospitalStakeholders),
+            //     ['eokorie@emgeresources.com']
+            // );
+
+     
+            // /* 1. NOTIFY HOSPITAL STAKEHOLDERS */
+            // \Mail::to($mailing_list)->send(new COEPatientAdditionalFundNotification($topup));
+            DB::commit();
+            return ResponseHelper::ajaxResponseBuilder(true, "Hospital Wallet credited", $topup);
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            throw $ex;
+        }
+    }
+
+
 }

@@ -206,6 +206,9 @@ Route::group(['middleware' => [/* PUT MIDDLEWARES HERE */]], function () {
         Route::put('/sadmin/chfstaffs/{user_id}', [CHFAdminController::class, 'update']);
         Route::delete('/sadmin/chfstaffs/{user_id}', [CHFAdminController::class, 'destroy']);
         Route::get('/chfadmin/patients', [CHFAdminController::class, 'chfPatients']);
+        Route::get('/coe/wallet_topup', [WalletTopupController::class, 'coeWalletTopupHistory']);
+        Route::post('/coe/wallet_topup', [WalletTopupController::class, 'coeWalletTopupInitiate']);
+        Route::put('/coe/wallet_topup', [WalletTopupController::class, 'creditCOEWallet']);
         // Route::get('/sadmin/chfstaffs/patients', [CHFAdminController::class, 'chfPatients']);
 
         // COE HELP DESK STAFF CONTROLLER
