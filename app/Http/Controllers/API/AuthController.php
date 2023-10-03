@@ -89,6 +89,8 @@ class AuthController extends Controller
                 'channel' => $email,
                 'hash' => $token,
             ]);
+            // This will send an email to the patient
+            
             // \Mail::to($email)->send(new EmailVerification([
             //     'email' => $email,
             //     'hash' => $token,
